@@ -1,0 +1,60 @@
+group 'jdolly'
+version '1.0.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url 'https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/'
+    }
+
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'jdolly.main.Main',
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes(
+                'Implementation-Version': '',
+                'Main-Class': 'jdolly.main.Main'
+        )
+    }
+
+    basename = project.name + '-all'
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    with jar
+}
+
+dependencies {
+
+    compile name: 'alloy4'
+
+    compile group: 'org.eclipse.core', name: 'runtime', version: '3.2.0-v20060603'
+    compile group: 'org.eclipse.equinox', name: 'org.eclipse.equinox.common', version: '3.2.0-v20060603'
+    compile group: 'org.eclipse.jdt', name: 'core', version: '3.2.3.v_686_R32x'
+
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+
