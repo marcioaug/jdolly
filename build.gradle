@@ -29,14 +29,16 @@ jar {
 task fatJar(type: Jar) {
     manifest {
         attributes(
-                'Implementation-Version': '',
+                'Implementation-Version': version,
                 'Main-Class': 'jdolly.main.Main'
         )
     }
 
-    basename = project.name + '-all'
+    baseName = project.name + '-all'
 
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } {
+        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    }
 
     with jar
 }
