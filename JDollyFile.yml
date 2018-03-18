@@ -1,0 +1,7 @@
+maxPackage: 1
+maxClass: 1
+maxMethod: 1
+maxField: 1
+theoryFile: alloyTheory/simple/default.als
+skipSize: 25
+output: output/

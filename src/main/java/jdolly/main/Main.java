@@ -1,11 +1,12 @@
 package jdolly.main;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import jdolly.JDolly;
 import jdolly.JDollyFactory;
 import jdolly.Scope;
@@ -15,22 +16,35 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 
 public class Main {
 
-	private static String theoryFile = "alloyTheory/default.als";
-	private static String output = "";
+	private static final String JDOLLY_FILE = "JDollyFile.yml";
+
+	private static String theoryFile;
+	private static String output;
 	private static JDolly generator;
 	private static Scope scope;
-	private static int skipSize = 25;
+	private static int skipSize;
 	private static ProgramDetailer programDetailer;
 	private static Long maxPrograms;
 
 	public static void main(String[] args) {
 		parseArguments(args);
-		
-		/*The scope below is used in the article "scaling testing of refactoring engines"*/
-		scope = new Scope(/* maxPackage = */ 2,
-						  /* maxClass = */ 3, 
-						  /* maxMethod = */ 3, 
-						  /* maxField = */ 2);
+
+		File jDollyFile = getJDollyFile();
+
+		if (jDollyFile != null) {
+			try {
+				scope = new ObjectMapper(new YAMLFactory()).readValue(jDollyFile, Scope.class);
+			} catch (IOException e) {
+				System.err.println("Não foi possível abrir o arquivo de configuração.\n" + e);
+			}
+		} else {
+			scope = new Scope();
+		}
+
+        theoryFile = scope.getTheoryFile();
+        skipSize = scope.getSkipSize();
+        output = scope.getOutput();
+
 		generator = JDollyFactory.createJDolly(scope, theoryFile);
 		
 		programDetailer = new ProgramDetailer(/* print the Programs? = */ true, 
@@ -48,7 +62,7 @@ public class Main {
 		
 		final boolean checkCompilationErrors = programDetailer.shouldCheckForCompilationErrors();
 		
-		for (List<CompilationUnit> cus : generator) {
+    		for (List<CompilationUnit> cus : generator) {
 			
 			count++;
 			
@@ -151,5 +165,17 @@ public class Main {
 			result = bis.read();
 		}
 		return buf.toString();
+	}
+
+	private static File getJDollyFile() {
+
+        Path path = Paths.get(JDOLLY_FILE).toAbsolutePath();
+		File jDollyFile = new File(path.toString()) ;
+
+		if (jDollyFile.exists() && !jDollyFile.isDirectory()) {
+			return jDollyFile;
+		}
+
+		return null;
 	}
 }
