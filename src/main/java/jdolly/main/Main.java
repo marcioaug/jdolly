@@ -60,25 +60,25 @@ public class Main {
 
 		TestLogger logger = new TestLogger(output);
 		
-		final boolean checkCompilationErrors = programDetailer.shouldCheckForCompilationErrors();
-		
+//		final boolean checkCompilationErrors = programDetailer.shouldCheckForCompilationErrors();
+		final boolean checkCompilationErrors = true;
+
     		for (List<CompilationUnit> cus : generator) {
-			
-			count++;
-			
-			if (count % skip != 0){ 
-				continue;
+				count++;
+
+				if (count % skip != 0){
+					continue;
+				}
+				if (maxPrograms != null && count == maxPrograms){
+					break;
+				}
+				if (programDetailer.shouldPrintPrograms()) {
+					programDetailer.printPrograms(cus);
+				}
+				if (programDetailer.shouldPrintLogFiles()){
+					logger.logGenerated(cus, false/*checkCompilationErrors*/);
+				}
 			}
-			if (maxPrograms != null && count == maxPrograms){
-				break;
-			}	
-			if (programDetailer.shouldPrintPrograms()) {
-				programDetailer.printPrograms(cus);
-			}
-			if (programDetailer.shouldPrintLogFiles()){
-				logger.logGenerated(cus, checkCompilationErrors);
-			}	
-		}
 		if (checkCompilationErrors) {
 			ProgramDetailer.printCompilationErrorsRates(logger);
 		}

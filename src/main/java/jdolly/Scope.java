@@ -9,6 +9,7 @@ public class Scope {
 	private String theoryFile = "alloyTheory/default.als";
 	private int skipSize = 25;
 	private String output = "";
+	private int maxVariable = 0;
 
 	public Scope() { }
 	
@@ -74,6 +75,14 @@ public class Scope {
 
 	public void setOutput(String output) {
 		this.output = output;
+	}
+
+	public int getMaxVariable() {
+		return this.maxVariable;
+	}
+
+	public void setMaxVariable(final int maxVariable) {
+		this.maxVariable = maxVariable;
 	}
 
 	@Override

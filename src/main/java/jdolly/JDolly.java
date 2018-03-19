@@ -40,6 +40,10 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 
 	protected int maxMethodNames;
 
+	protected int maxVariable;
+
+	protected int maxVariableId;
+
 	protected boolean isExactMaxClasses = false;
 
 	protected Module javaMetamodel;
@@ -53,6 +57,10 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 	protected boolean isExactMaxMethodNames = false;
 
 	protected boolean isExactMethodBodyScope = false;
+
+	protected boolean isExactVariable = false;
+
+	protected boolean isExactVariableId = false;
 
 	protected int maxMethodBody;
 

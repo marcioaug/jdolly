@@ -46,6 +46,7 @@ public class AlloyToJavaTranslator {
 	// private final String ALLOY_MODULE_NAME = "javametamodel";
 	
 	public AlloyToJavaTranslator(A4Solution ans) {
+		System.out.println(ans);
 		this.ans = ans;
 	}
  
@@ -253,12 +254,12 @@ public class AlloyToJavaTranslator {
 		List<String> methods = methodsMap.get(classId);
 
 		if (methods != null) {
-			
 			Map<String, List<String>> idRel = getMethodsRelationsBy("id");
 			Field mIsAbstractRelations = getMethodsFieldsByCriteria("isAbstract");
 			Map<String, List<String>> argRel = getMethodsRelationsBy("param");
 			Map<String, List<String>> visRel = getMethodsRelationsBy("acc");
 			Map<String, List<String>> bodyRel = getMethodsRelationsBy("b");
+            Map<String, List<String>> returnRel = getMethodsRelationsBy("return");
 
 			for (String method : methods) {
 				String id = idRel.get(method).get(0);
@@ -296,15 +297,12 @@ public class AlloyToJavaTranslator {
 					methodDeclaration.parameters().add(parameter);
 				}
 
-				methodDeclaration.setReturnType2(ast
-						.newPrimitiveType(PrimitiveType.LONG));
+				methodDeclaration.setReturnType2(getType(returnRel.get(method).get(0)));
+
 				List<String> list = bodyRel.get(method);
 				if (list != null) {
 					String body = bodyRel.get(method).get(0);
-					ReturnStatement returnStatement = ast.newReturnStatement();
-					returnStatement.setExpression(getMethodBody(body, classId));
 					methodDeclaration.setBody(ast.newBlock());
-					methodDeclaration.getBody().statements().add(returnStatement);
 				}
 				result.add(methodDeclaration);
 			}
@@ -599,7 +597,7 @@ public class AlloyToJavaTranslator {
 	}
 
 	private BodyType setBodyType(String bodySig) {
-		BodyType result = null; // se não for nenhuma das condições haverá NullPointerException
+		BodyType result = null; // se nï¿½o for nenhuma das condiï¿½ï¿½es haverï¿½ NullPointerException
 
 		if (bodySig.startsWith("MethodInvocation"))
 			result = BodyType.METHOD_INVOCATION;
@@ -701,7 +699,8 @@ public class AlloyToJavaTranslator {
 		
 		else if (type.equals("Int__0"))
 			result = ast.newPrimitiveType(PrimitiveType.INT);
-
+		else if (type.equals("Void__0"))
+            result = ast.newPrimitiveType(PrimitiveType.VOID);
 		else {
 			Map<String, List<String>> classRel = getClassRelationsBy("id");
 			List<String> id = classRel.get(type);
@@ -804,7 +803,7 @@ public class AlloyToJavaTranslator {
 	}
 
 	private Field getField(String key, SafeList<Field> compUnitFields) {
-		Field result = null; //compUnitFields.get(0); // possível null pointer exception
+		Field result = null; //compUnitFields.get(0); // possï¿½vel null pointer exception
 
 		for (Field field : compUnitFields) {
 			String strRepresOfField = field.toString();

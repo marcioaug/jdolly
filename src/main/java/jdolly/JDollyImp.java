@@ -18,7 +18,7 @@ import jdolly.util.Util;
 public class JDollyImp extends JDolly {
 
 	public JDollyImp(final String alloyTheory, final int maxPackages, final int maxClasses,
-			final int maxMethods, final int maxFields) {
+					 final int maxMethods, final int maxFields) {
 		super();
 		this.alloyTheory = alloyTheory;
 		this.maxPackages = maxPackages;
@@ -29,11 +29,12 @@ public class JDollyImp extends JDolly {
 		this.maxMethodBody = maxMethods;
 		this.maxFields = maxFields;
 		this.maxFieldNames = maxFields;
-
+		this.maxVariable = 0;
+		this.maxVariableId = 0;
 	}
 
 	public JDollyImp(final String alloyTheory, final Integer maxPackages,
-			final int maxClasses, final int maxMethods) {
+					 final int maxClasses, final int maxMethods) {
 		super();
 		this.alloyTheory = alloyTheory;
 		this.maxPackages = maxPackages;
@@ -42,6 +43,39 @@ public class JDollyImp extends JDolly {
 		this.maxMethods = maxMethods;
 		this.maxMethodNames = maxMethods;
 		this.maxMethodBody = maxMethods;
+		this.maxVariable = 0;
+		this.maxVariableId = 0;
+	}
+
+
+	public JDollyImp(final String alloyTheory, final int maxPackages, final int maxClasses,
+			final int maxMethods, final int maxFields, final int maxVariable) {
+		super();
+		this.alloyTheory = alloyTheory;
+		this.maxPackages = maxPackages;
+		this.maxClasses = maxClasses;
+		this.maxClassNames = maxClasses;
+		this.maxMethods = maxMethods;
+		this.maxMethodNames = maxMethods;
+		this.maxMethodBody = maxMethods;
+		this.maxFields = maxFields;
+		this.maxFieldNames = maxFields;
+		this.maxVariable = maxVariable;
+		this.maxVariableId = maxVariable;
+	}
+
+	public JDollyImp(final String alloyTheory, final Integer maxPackages,
+			final int maxClasses, final int maxMethods, final int maxVariable) {
+		super();
+		this.alloyTheory = alloyTheory;
+		this.maxPackages = maxPackages;
+		this.maxClasses = maxClasses;
+		this.maxClassNames = maxClasses;
+		this.maxMethods = maxMethods;
+		this.maxMethodNames = maxMethods;
+		this.maxMethodBody = maxMethods;
+		this.maxVariable = maxVariable;
+		this.maxVariableId = maxVariable;
 	}
 
 	public JDollyImp(final String alloyTheory) {
@@ -61,7 +95,9 @@ public class JDollyImp extends JDolly {
 		final Sig package_ = createSignatureBy("Package");
 		final Sig body = createSignatureBy("Body");
 		final Sig field = createSignatureBy("Field");
-		final Sig fieldId = createSignatureBy("FieldId");
+		final Sig variable = createSignatureBy("Variable");
+		final Sig variableId = createSignatureBy("VariableId");
+//		final Sig fieldId = createSignatureBy("FieldId");
 
 		final CommandScope packageScope = new CommandScope(package_,
 				isExactMaxPackages, maxPackages);
@@ -83,21 +119,29 @@ public class JDollyImp extends JDolly {
 				isExactMaxMethodNames, maxMethodNames);
 		result.add(methodIdScope);
 
-		final CommandScope bodyScope = new CommandScope(body, 
+		final CommandScope bodyScope = new CommandScope(body,
 				isExactMethodBodyScope, maxMethodBody);
 		result.add(bodyScope);
 
-		if (this.maxFields != null) {
-			final CommandScope fieldScope = new CommandScope(field, isExactMaxFields,
-					maxFields);
-			result.add(fieldScope);
+		final CommandScope variableScope = new CommandScope(variable,
+				isExactVariable, maxVariable);
+		result.add(variableScope);
 
-			final CommandScope fieldIdScope = new CommandScope(fieldId,
-					isExactMaxFieldnames, maxFieldNames);
-			result.add(fieldIdScope);
+		final CommandScope variableIdScope = new CommandScope(variableId,
+				isExactVariableId, maxVariableId);
+		result.add(variableIdScope);
 
-			
-		}
+//		if (this.maxFields != null) {
+//			final CommandScope fieldScope = new CommandScope(field, isExactMaxFields,
+//					maxFields);
+//			result.add(fieldScope);
+//
+//			final CommandScope fieldIdScope = new CommandScope(fieldId,
+//					isExactMaxFieldnames, maxFieldNames);
+//			result.add(fieldIdScope);
+//
+//
+//		}
 		return ConstList.make(result);
 	}
 
