@@ -10,43 +10,22 @@ import java.util.Random;
 import jdolly.util.StrUtil;
 import jdolly.visitors.ImportCheckerVisitor;
 import jdolly.visitors.ImportVisitor;
+import org.eclipse.jdt.core.dom.*;
 import sun.misc.Signal;
 
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.PackageDeclaration;
-import org.eclipse.jdt.core.dom.PrimitiveType;
-import org.eclipse.jdt.core.dom.ReturnStatement;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.SuperFieldAccess;
-import org.eclipse.jdt.core.dom.SuperMethodInvocation;
-import org.eclipse.jdt.core.dom.ThisExpression;
-import org.eclipse.jdt.core.dom.Type;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import sun.security.util.DisabledAlgorithmConstraints;
 
 public class AlloyToJavaTranslator {
 	// private final String ALLOY_MODULE_NAME = "javametamodel";
 	
 	public AlloyToJavaTranslator(A4Solution ans) {
-		System.out.println(ans);
 		this.ans = ans;
 	}
  
@@ -261,7 +240,7 @@ public class AlloyToJavaTranslator {
 			Map<String, List<String>> bodyRel = getMethodsRelationsBy("b");
             Map<String, List<String>> returnRel = getMethodsRelationsBy("return");
 
-			for (String method : methods) {
+            for (String method : methods) {
 				String id = idRel.get(method).get(0);
 				String arg = setVisValue(argRel, method);
 
@@ -302,7 +281,106 @@ public class AlloyToJavaTranslator {
 				List<String> list = bodyRel.get(method);
 				if (list != null) {
 					String body = bodyRel.get(method).get(0);
-					methodDeclaration.setBody(ast.newBlock());
+
+					Map<String, List<String>> variablesRel = getBodyRelationsBy("variables");
+					Block block = ast.newBlock();
+
+
+					if (variablesRel != null && variablesRel.containsKey(body)) {
+						for (String variable : variablesRel.get(body)) {
+
+							String variableId = variable.toLowerCase();
+
+							Type type = getType(getEntityRelatByCriteria("type", "Variable").get(variable).get(0));
+
+
+							VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
+							fragment.setName(ast.newSimpleName(variableId));
+
+							if (getEntityRelatByCriteria("initializer", "Variable").containsKey(variable)) {
+								String initializer = getEntityRelatByCriteria("initializer", "Variable").get(variable).get(0);
+								fragment.setInitializer(ast.newNumberLiteral(getNumberLiteral(initializer)));
+							}
+
+							VariableDeclarationStatement variableDeclaration = ast.newVariableDeclarationStatement(fragment);
+							variableDeclaration.setType(type);
+
+							block.statements().add(variableDeclaration);
+						}
+					}
+
+
+                    String infixArithmeticExpression = getEntityRelatByCriteria("infixArithmeticExpression", "BodyMethod").get(body).get(0);
+                    String exprOperator = getEntityRelatByCriteria("operator", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
+                    String leftOperand = getEntityRelatByCriteria("leftOperand", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
+                    String rightOperand = getEntityRelatByCriteria("rightOperand", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
+
+
+
+
+
+                    System.out.println(leftOperand);
+                    System.out.println(rightOperand);
+
+					InfixExpression infixExpression = ast.newInfixExpression();
+					Assignment assignment = ast.newAssignment();
+
+					assignment.setLeftHandSide(ast.newSimpleName(leftOperand.toLowerCase()));
+					assignment.setOperator(Assignment.Operator.ASSIGN);
+
+					infixExpression.setOperator(getInfixOperator(exprOperator));
+					infixExpression.setLeftOperand(ast.newSimpleName(leftOperand.toLowerCase()));
+					infixExpression.setRightOperand(ast.newNumberLiteral(getNumberLiteral(rightOperand)));
+
+					assignment.setRightHandSide(infixExpression);
+
+					Block ifBlock = ast.newBlock();
+
+					block.statements().add(ast.newExpressionStatement(assignment));
+
+
+					infixExpression = ast.newInfixExpression();
+					infixExpression.setOperator(InfixExpression.Operator.EQUALS);
+					infixExpression.setLeftOperand(ast.newNumberLiteral("0"));
+					infixExpression.setRightOperand(ast.newNumberLiteral("0"));
+
+					IfStatement ifStatement = ast.newIfStatement();
+					ifStatement.setExpression(infixExpression);
+//
+//
+					Map<String, List<String>> returns = getBodyRelationsBy("return");
+//
+//					if (returns.containsKey(body)) {
+//
+//						Assignment assignment = ast.newAssignment();
+//
+//						assignment.setLeftHandSide(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
+//						assignment.setOperator(Assignment.Operator.ASSIGN);
+//
+//						infixExpression = ast.newInfixExpression();
+//						infixExpression.setOperator(InfixExpression.Operator.PLUS);
+//						infixExpression.setLeftOperand(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
+//						infixExpression.setRightOperand(ast.newNumberLiteral("0"));
+//
+//						assignment.setRightHandSide(infixExpression);
+//
+//						Block ifBlock = ast.newBlock();
+//
+//						block.statements().add(ast.newExpressionStatement(assignment));
+//
+//						ifStatement.setThenStatement(ifBlock);
+//					}
+//
+					block.statements().add(ifStatement);
+
+					if (returns.containsKey(body)) {
+						ReturnStatement returnStatement = ast.newReturnStatement();
+						returnStatement.setExpression(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
+
+						block.statements().add(returnStatement);
+					}
+
+					methodDeclaration.setBody(block);
 				}
 				result.add(methodDeclaration);
 			}
@@ -310,6 +388,54 @@ public class AlloyToJavaTranslator {
 
 		return result;
 	}
+
+	private String getNumberLiteral(String numberLiteral) {
+
+		String literal;
+
+		switch (numberLiteral) {
+			case "MinusOneInt_0":
+				literal = "-1";
+				break;
+			case "ZeroInt_0":
+				literal = "0";
+				break;
+			case "OneInt_0":
+				literal = "1";
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid literal");
+		}
+
+		return literal;
+	}
+
+    private InfixExpression.Operator getInfixOperator(String op) {
+
+        InfixExpression.Operator operator;
+
+        switch (op) {
+            case "TIMES_0":
+                operator = InfixExpression.Operator.REMAINDER;
+                break;
+            case "DIVIDE_0":
+                operator = InfixExpression.Operator.DIVIDE;
+                break;
+            case "REMAINDER_0":
+                operator = InfixExpression.Operator.REMAINDER;
+                break;
+            case "PLUS_0":
+                operator = InfixExpression.Operator.PLUS;
+                break;
+            case "MINUS_0":
+                operator = InfixExpression.Operator.MINUS;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid operator");
+        }
+
+        return operator;
+    }
 
 	private String getIdFromInvocation(Sig signature, String bodyId, String key){
 		SafeList<Field> sFields = signature.getFields();
@@ -764,6 +890,10 @@ public class AlloyToJavaTranslator {
 		SafeList<Field> entityFields = entitySig.getFields();
 		Field entityFieldsByCriteria = getField(criteria, entityFields);
 		return entityFieldsByCriteria;
+	}
+
+	private Map<String, List<String>> getBodyRelationsBy(String criteria) {
+		return getEntityRelatByCriteria(criteria, "BodyMethod");
 	}
 		
 	private Map<String, List<String>> getMethodsRelationsBy(String criteria){		
