@@ -5,7 +5,7 @@ maxField: 1
 maxVariable: 2
 
 theoryFile: alloyTheory/simple/default.als
-skipSize: 4
+skipSize: 1
 output: output/
 
 sigs:

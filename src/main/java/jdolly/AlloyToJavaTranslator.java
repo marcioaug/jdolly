@@ -354,13 +354,8 @@ public class AlloyToJavaTranslator {
 	}
 
     private VariableDeclarationStatement createVariableDeclaration(String id) {
-
-		System.out.println(id);
-
         SimpleName variableId = this.createVariable(id);
         String type = getMyRelation(id, "type", "Var");
-
-		System.out.println(type);
 
         if (type != null) {
             VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
