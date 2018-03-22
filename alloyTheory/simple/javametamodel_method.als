@@ -17,8 +17,9 @@ fact {
     aBodyBelongsToOnlyOneMethod[]
     allMethodsMustHaveABody[]
     all p:Method.params | p.type = Int_
+    all p:Method.params | no p.initializer
     all m:Method | m.return = Int_
-    #Method.params <= 1
+    #Method.params = 1
     all m:Method | m.visibility = PUBLIC
     all v:Var | some m:Method | v in m.b.variables or v in m.params
 }
