@@ -5,5 +5,21 @@ maxField: 1
 maxVariable: 2
 
 theoryFile: alloyTheory/simple/default.als
-skipSize: 1
+skipSize: 4
 output: output/
+
+sigs:
+  Package: 1
+  Class: 1
+  ClassId: 1
+  Method: 1
+  MethodId: 1
+  Body: 1
+  Var: 2
+  IfStatement: 1
+  WhileStatement: 1
+  InfixLogicalExpression: 1
+  InfixArithmeticExpression: 1
+  IfBlock: 1
+  WhileBlock: 1
+  Assignment: 1

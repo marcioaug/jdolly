@@ -76,7 +76,7 @@ public class Main {
 					programDetailer.printPrograms(cus);
 				}
 				if (programDetailer.shouldPrintLogFiles()){
-					logger.logGenerated(cus, false/*checkCompilationErrors*/);
+					logger.logGenerated(cus, checkCompilationErrors);
 				}
 			}
 		if (checkCompilationErrors) {

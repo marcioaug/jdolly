@@ -4,16 +4,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import edu.mit.csail.sdg.alloy4.*;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
+import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
+import jdolly.util.Util;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.testorrery.ForLoopIterator;
 import org.testorrery.ForLoopWithJumpIterator;
 import org.testorrery.Generator;
 import org.testorrery.IGenerator;
 
-import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
@@ -42,8 +45,6 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 
 	protected int maxVariable;
 
-	protected int maxVariableId;
-
 	protected boolean isExactMaxClasses = false;
 
 	protected Module javaMetamodel;
@@ -60,8 +61,6 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 
 	protected boolean isExactVariable = false;
 
-	protected boolean isExactVariableId = false;
-
 	protected int maxMethodBody;
 
 	protected Integer maxFields;
@@ -72,7 +71,7 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 
 	protected int maxFieldNames;
 	
-	
+
 	public JDolly() {
 		super();
 	}
@@ -236,6 +235,7 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 	protected Sig createSignatureBy(String name) {
 		Sig result = null;
 		ConstList<Sig> sigsDefined = javaMetamodel.getAllReachableSigs();
+		System.out.println(sigsDefined);
 		for (Sig sig : sigsDefined) {
 			String label = sig.label.replaceAll("[^/]*/", "");
 			if (label.equals(name))
@@ -248,8 +248,32 @@ public abstract class JDolly extends Generator<List<CompilationUnit>> {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	
+
+	protected abstract ConstList<CommandScope> createScopeList() throws ErrorSyntax;
+
+	protected void defineCurrentAns(A4Reporter compilationIssuesReport) throws Err, ErrorSyntax {
+
+			javaMetamodel = CompUtil.parseEverything_fromFile(compilationIssuesReport, null,
+				alloyTheory);
+
+		final ConstList<Command> commandsInModule = javaMetamodel.getAllCommands();
+
+		for (Command currentCommand : commandsInModule) {
+			Command currentCmdWithOtherScope = modifyCurrentCmdScope(currentCommand);
+			jdolly.util.Util.printCommand(currentCmdWithOtherScope);
+
+			A4Options options = Util.defHowExecCommands();
+			currentAns = TranslateAlloyToKodkod.execute_command(compilationIssuesReport,
+					javaMetamodel.getAllReachableSigs(), currentCmdWithOtherScope, options);
+		}
+	}
+
+	private Command modifyCurrentCmdScope(Command currentCommand) throws ErrorSyntax {
+		ConstList<CommandScope> constList = createScopeList();
+		Command currentCmdWithOtherScope = currentCommand.change(constList);
+
+		return currentCmdWithOtherScope;
+	}
 
 	
 

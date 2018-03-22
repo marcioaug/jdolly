@@ -30,7 +30,6 @@ public class JDollyImp extends JDolly {
 		this.maxFields = maxFields;
 		this.maxFieldNames = maxFields;
 		this.maxVariable = 0;
-		this.maxVariableId = 0;
 	}
 
 	public JDollyImp(final String alloyTheory, final Integer maxPackages,
@@ -44,7 +43,6 @@ public class JDollyImp extends JDolly {
 		this.maxMethodNames = maxMethods;
 		this.maxMethodBody = maxMethods;
 		this.maxVariable = 0;
-		this.maxVariableId = 0;
 	}
 
 
@@ -61,7 +59,6 @@ public class JDollyImp extends JDolly {
 		this.maxFields = maxFields;
 		this.maxFieldNames = maxFields;
 		this.maxVariable = maxVariable;
-		this.maxVariableId = maxVariable;
 	}
 
 	public JDollyImp(final String alloyTheory, final Integer maxPackages,
@@ -75,7 +72,6 @@ public class JDollyImp extends JDolly {
 		this.maxMethodNames = maxMethods;
 		this.maxMethodBody = maxMethods;
 		this.maxVariable = maxVariable;
-		this.maxVariableId = maxVariable;
 	}
 
 	public JDollyImp(final String alloyTheory) {
@@ -84,7 +80,7 @@ public class JDollyImp extends JDolly {
 
 	}
 
-	private ConstList<CommandScope> createScopeList() throws ErrorSyntax {
+	protected ConstList<CommandScope> createScopeList() throws ErrorSyntax {
 
 		List<CommandScope> result = new ArrayList<CommandScope>();
 
@@ -95,8 +91,7 @@ public class JDollyImp extends JDolly {
 		final Sig package_ = createSignatureBy("Package");
 		final Sig body = createSignatureBy("Body");
 		final Sig field = createSignatureBy("Field");
-		final Sig variable = createSignatureBy("Variable");
-		final Sig variableId = createSignatureBy("VariableId");
+		final Sig variable = createSignatureBy("Var");
 //		final Sig fieldId = createSignatureBy("FieldId");
 
 		final CommandScope packageScope = new CommandScope(package_,
@@ -127,9 +122,6 @@ public class JDollyImp extends JDolly {
 				isExactVariable, maxVariable);
 		result.add(variableScope);
 
-		final CommandScope variableIdScope = new CommandScope(variableId,
-				isExactVariableId, maxVariableId);
-		result.add(variableIdScope);
 
 //		if (this.maxFields != null) {
 //			final CommandScope fieldScope = new CommandScope(field, isExactMaxFields,
@@ -156,31 +148,6 @@ public class JDollyImp extends JDolly {
 		} catch (Err e) {
 			e.printStackTrace();
 		}
-	}
-
-	private void defineCurrentAns(A4Reporter compilationIssuesReport) throws Err, ErrorSyntax {
-		
-		javaMetamodel = CompUtil.parseEverything_fromFile(compilationIssuesReport, null,
-				alloyTheory);
-
-		final ConstList<Command> commandsInModule = javaMetamodel.getAllCommands();
-		
-		for (Command currentCommand : commandsInModule) {
-			Command currentCmdWithOtherScope = modifyCurrentCmdScope(currentCommand);
-			Util.printCommand(currentCmdWithOtherScope);
-			
-			A4Options options = Util.defHowExecCommands();
-			currentAns = TranslateAlloyToKodkod.execute_command(compilationIssuesReport,
-					javaMetamodel.getAllReachableSigs(), currentCmdWithOtherScope, options);
-		}
-	}
-
-	private Command modifyCurrentCmdScope(Command currentCommand) throws ErrorSyntax {
-		ConstList<CommandScope> constList = createScopeList();
-
-		Command currentCmdWithOtherScope = currentCommand.change(constList);
-		
-		return currentCmdWithOtherScope;
 	}
 
 }

@@ -7,13 +7,20 @@ sig MethodId extends Id {}
 sig Method {
     id: one MethodId,
     b: one BodyMethod,
+    params: set Var,
     return: one PrimitiveType,
+    visibility: one Visibility
 }
 
 fact {
     thereShouldBeNoUnusedMethodId[]
     aBodyBelongsToOnlyOneMethod[]
     allMethodsMustHaveABody[]
+    all p:Method.params | p.type = Int_
+    all m:Method | m.return = Int_
+    #Method.params <= 1
+    all m:Method | m.visibility = PUBLIC
+    all v:Var | some m:Method | v in m.b.variables or v in m.params
 }
 
 pred thereShouldBeNoUnusedMethodId[] {
@@ -28,75 +35,83 @@ pred allMethodsMustHaveABody[] {
 	BodyMethod in Method.b
 }
 
-sig VariableId extends Id {}
-
-sig Variable {
-    id: one VariableId,
-    type: one Int_,
-    initializer: lone IntConstant
-}
-
-fact {
-    all variableId:VariableId | some v:Variable | v.id = variableId
-    all v:Variable | v.type != Void_
-}
-
-
 sig BodyMethod extends Body {
-    variables: set Variable,
-    infixArithmeticExpression: one InfixArithmeticExpression,
-    return: lone Variable
+    variables: set Var,
+    ifStatement: lone IfStatement,
+    whileStatement: lone WhileStatement,
+    return: lone Var
 }
 
 fact {
-    #BodyMethod.variables = 2
+    all m:Method | all p:m.params | !p in m.b.variables
     all m:Method | m.return = Void_ => no m.b.return
     all m:Method | m.return != Void_ => m.b.return in m.b.variables
-    all m:Method | m.return != Void_ => #m.b.return = 1
-    all m:Method | m.b.infixArithmeticExpression.leftOperand in m.b.variables
+    all m:Method | m.return != Void_ => some m.b.return
+    // all m:Method | one m.b.whileStatement | m.b.whileStatement.body.assignment.leftHandSide = m.b.return
+    all b:BodyMethod | one b.whileStatement <=> no b.ifStatement
+    all b:BodyMethod | all v:b.variables | one v.initializer
+    //all b:BodyMethod | b.whileStatement.body != b.ifStatement.thenStatement
+    all m:Method | no m.b.ifStatement => m.b.whileStatement.body.assignment.leftHandSide = m.b.return
+    all m:Method | no m.b.whileStatement => m.b.ifStatement.thenStatement.assignment.leftHandSide = m.b.return
+    all m:Method | m.b.whileStatement.expression.leftOperand in m.params or m.b.whileStatement.expression.leftOperand in m.b.variables
+    all m:Method | m.b.ifStatement.expression.leftOperand in m.params or m.b.ifStatement.expression.leftOperand in m.b.variables
 }
 
 
-abstract sig InfixOperator {}
-abstract sig InfixArithmeticOperator extends InfixOperator {}
-// abstract sig InfixLogicalOperator {}
-one sig TIMES, DIVIDE, REMAINDER, PLUS, MINUS extends InfixArithmeticOperator {}
-// one sig LESS_, GREATER_, LESS_EQUALS, GREATER_EQUALS, EQUALS, NOT_EQUALS, CONDITIONAL_OR, CONDITIONAL_AND extends InfixLogicalOperator {}
-
-one sig MinusOneInt, ZeroInt, OneInt extends IntConstant {}
-
-abstract sig Expression {}
-// abstract sig Statement {}
-abstract sig Constant extends Expression {}
-abstract sig IntConstant extends Constant {}
+abstract sig InfixExpression extends Expression {}
 
 
-// abstract sig InfixExpression extends Expression {
-//     leftOperand: one Variable,
-//     rightOperand: one IntConstant
-// }
-
-one sig InfixArithmeticExpression {
-    leftOperand: one Variable,
-    rightOperand: one IntConstant,
+sig InfixArithmeticExpression extends InfixExpression {
+    leftOperand: one Var,
+    rightOperand: one VarOrLiteral,
     operator: one InfixArithmeticOperator
 }
 
-// one sig InfixLogicalExpression extends InfixExpression {
-//     operator: one InfixLogicalOperator
+fact {
+    all i:InfixArithmeticExpression | i.leftOperand != i.rightOperand
+    all i:InfixArithmeticExpression | i.rightOperand = ZERO => i.operator != DIVIDE
+    all i:InfixArithmeticExpression | i.rightOperand = ZERO => i.operator != REMAINDER
+
+}
+
+sig InfixLogicalExpression extends InfixExpression {
+    leftOperand: one Var,
+    rightOperand: one VarOrLiteral,
+    operator: one InfixLogicalOperator
+}
+
+fact {
+    all i:InfixLogicalExpression | i.leftOperand != i.rightOperand
+}
+
+
+abstract sig AssignmentOperator {}
+one sig ASSIGN extends AssignmentOperator {}
+
+sig Assignment extends Expression {
+    leftHandSide: one Var,
+    operator: one AssignmentOperator,
+    rightHandSide: one InfixArithmeticExpression
+}
+
+sig IfStatement extends Statement {
+    expression: one InfixLogicalExpression,
+    thenStatement: one IfBlock,
+}
+
+sig WhileStatement extends Statement {
+    expression: one InfixLogicalExpression,
+    body: one WhileBlock,
+}
+
+// one sig Block extends Statement {
+//     expression: one InfixArithmeticExpression
 // }
 
-// abstract sig AssigmentOperator {}
-// one sig ASSIGN_ extends AssigmentOperator {}
+sig IfBlock {
+    assignment: one Assignment
+}
 
-// one sig Assigment extends Expression {
-//     leftHandSide: one Variable,
-//     operator: one AssigmentOperator,
-//     rightHandSide: one InfixExpression
-// }
-
-// one sig IfStatement extends Statement {
-//     expression: one InfixLogicalExpression,
-//     thenStatement: one Statement,
-//     elseStatement: one Statement
-// }
+sig WhileBlock {
+    assignment: one Assignment
+}

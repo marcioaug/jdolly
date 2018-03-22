@@ -235,7 +235,7 @@ public class AlloyToJavaTranslator {
 		if (methods != null) {
 			Map<String, List<String>> idRel = getMethodsRelationsBy("id");
 			Field mIsAbstractRelations = getMethodsFieldsByCriteria("isAbstract");
-			Map<String, List<String>> argRel = getMethodsRelationsBy("param");
+			Map<String, List<String>> argRel = getMethodsRelationsBy("params");
 			Map<String, List<String>> visRel = getMethodsRelationsBy("acc");
 			Map<String, List<String>> bodyRel = getMethodsRelationsBy("b");
             Map<String, List<String>> returnRel = getMethodsRelationsBy("return");
@@ -256,24 +256,22 @@ public class AlloyToJavaTranslator {
 					isAbstract = "False";
 				}
 				
-				MethodDeclaration methodDeclaration = ast
-						.newMethodDeclaration();
+				MethodDeclaration methodDeclaration = ast.newMethodDeclaration();
 				methodDeclaration.setName(ast.newSimpleName(id.toLowerCase()));
-				Modifier m = getAccessModifier(vis);
-				if (m != null)
-					methodDeclaration.modifiers().add(m);
+
+
+
+				String visibility = this.getMyRelation(method, "visibility", "Method");
+				if (visibility != null)
+					methodDeclaration.modifiers().add(this.getVisibility(visibility));
 
 				if (isAbstract.contains("True") && !isInterface) {
 					Modifier mAbstrct = getAccessModifier("abstract");
 					methodDeclaration.modifiers().add(mAbstrct);
 				}
-				
-				if (arg.length() > 0) {
-					SingleVariableDeclaration parameter = ast
-							.newSingleVariableDeclaration();
-					parameter.setName(ast.newSimpleName("a"));
-					parameter.setType(getType(arg));
-					methodDeclaration.parameters().add(parameter);
+
+				for (String relation : this.getMyRelations(method, "params", "Method")) {
+					methodDeclaration.parameters().add(this.createSingleVariableDeclaration(relation));
 				}
 
 				methodDeclaration.setReturnType2(getType(returnRel.get(method).get(0)));
@@ -285,95 +283,23 @@ public class AlloyToJavaTranslator {
 					Map<String, List<String>> variablesRel = getBodyRelationsBy("variables");
 					Block block = ast.newBlock();
 
-
 					if (variablesRel != null && variablesRel.containsKey(body)) {
 						for (String variable : variablesRel.get(body)) {
-
-							String variableId = variable.toLowerCase();
-
-							Type type = getType(getEntityRelatByCriteria("type", "Variable").get(variable).get(0));
-
-
-							VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
-							fragment.setName(ast.newSimpleName(variableId));
-
-							if (getEntityRelatByCriteria("initializer", "Variable").containsKey(variable)) {
-								String initializer = getEntityRelatByCriteria("initializer", "Variable").get(variable).get(0);
-								fragment.setInitializer(ast.newNumberLiteral(getNumberLiteral(initializer)));
-							}
-
-							VariableDeclarationStatement variableDeclaration = ast.newVariableDeclarationStatement(fragment);
-							variableDeclaration.setType(type);
-
-							block.statements().add(variableDeclaration);
+							block.statements().add(this.createVariableDeclaration(variable));
 						}
 					}
 
+					for (String relation : getMyRelations(body, "ifStatement", "BodyMethod")) {
+                        block.statements().add(this.createIfStatement(relation));
+                    }
 
-                    String infixArithmeticExpression = getEntityRelatByCriteria("infixArithmeticExpression", "BodyMethod").get(body).get(0);
-                    String exprOperator = getEntityRelatByCriteria("operator", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
-                    String leftOperand = getEntityRelatByCriteria("leftOperand", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
-                    String rightOperand = getEntityRelatByCriteria("rightOperand", "InfixArithmeticExpression").get(infixArithmeticExpression).get(0);
+                    for (String relation : getMyRelations(body, "whileStatement", "BodyMethod")) {
+                        block.statements().add(this.createWhileStatement(relation));
+                    }
 
+                    Map<String, List<String>> returns = getBodyRelationsBy("return");
 
-
-
-
-                    System.out.println(leftOperand);
-                    System.out.println(rightOperand);
-
-					InfixExpression infixExpression = ast.newInfixExpression();
-					Assignment assignment = ast.newAssignment();
-
-					assignment.setLeftHandSide(ast.newSimpleName(leftOperand.toLowerCase()));
-					assignment.setOperator(Assignment.Operator.ASSIGN);
-
-					infixExpression.setOperator(getInfixOperator(exprOperator));
-					infixExpression.setLeftOperand(ast.newSimpleName(leftOperand.toLowerCase()));
-					infixExpression.setRightOperand(ast.newNumberLiteral(getNumberLiteral(rightOperand)));
-
-					assignment.setRightHandSide(infixExpression);
-
-					Block ifBlock = ast.newBlock();
-
-					block.statements().add(ast.newExpressionStatement(assignment));
-
-
-					infixExpression = ast.newInfixExpression();
-					infixExpression.setOperator(InfixExpression.Operator.EQUALS);
-					infixExpression.setLeftOperand(ast.newNumberLiteral("0"));
-					infixExpression.setRightOperand(ast.newNumberLiteral("0"));
-
-					IfStatement ifStatement = ast.newIfStatement();
-					ifStatement.setExpression(infixExpression);
-//
-//
-					Map<String, List<String>> returns = getBodyRelationsBy("return");
-//
-//					if (returns.containsKey(body)) {
-//
-//						Assignment assignment = ast.newAssignment();
-//
-//						assignment.setLeftHandSide(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
-//						assignment.setOperator(Assignment.Operator.ASSIGN);
-//
-//						infixExpression = ast.newInfixExpression();
-//						infixExpression.setOperator(InfixExpression.Operator.PLUS);
-//						infixExpression.setLeftOperand(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
-//						infixExpression.setRightOperand(ast.newNumberLiteral("0"));
-//
-//						assignment.setRightHandSide(infixExpression);
-//
-//						Block ifBlock = ast.newBlock();
-//
-//						block.statements().add(ast.newExpressionStatement(assignment));
-//
-//						ifStatement.setThenStatement(ifBlock);
-//					}
-//
-					block.statements().add(ifStatement);
-
-					if (returns.containsKey(body)) {
+        			if (returns.containsKey(body)) {
 						ReturnStatement returnStatement = ast.newReturnStatement();
 						returnStatement.setExpression(ast.newSimpleName(returns.get(body).get(0).toLowerCase()));
 
@@ -389,25 +315,238 @@ public class AlloyToJavaTranslator {
 		return result;
 	}
 
+    private String getMyRelation(String me, String type, String sig) {
+        Map<String, List<String>> relations = getEntityRelatByCriteria(type, sig);
+
+        if (relations.containsKey(me)) {
+            if (!relations.get(me).isEmpty())
+                return relations.get(me).get(0);
+        }
+
+        return null;
+    }
+
+	private List<String> getMyRelations(String me, String type, String sig) {
+	    List<String> result = new ArrayList<>();
+        Map<String, List<String>> relations = getEntityRelatByCriteria(type, sig);
+
+        if (relations.containsKey(me)) {
+            result = relations.get(me);
+        }
+
+        return result;
+    }
+
+    private SingleVariableDeclaration createSingleVariableDeclaration(String id) {
+		SimpleName variableId = this.createVariable(id);
+		String type = getMyRelation(id, "type", "Var");
+
+		if (type != null) {
+			SingleVariableDeclaration variable = ast.newSingleVariableDeclaration();
+
+			variable.setName(variableId);
+			variable.setType(getType(type));
+
+			return variable;
+		} else {
+			throw new IllegalArgumentException("Invalid Variable Declaration");
+		}
+	}
+
+    private VariableDeclarationStatement createVariableDeclaration(String id) {
+
+		System.out.println(id);
+
+        SimpleName variableId = this.createVariable(id);
+        String type = getMyRelation(id, "type", "Var");
+
+		System.out.println(type);
+
+        if (type != null) {
+            VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
+            fragment.setName(variableId);
+
+
+            String initializer = getMyRelation(id, "initializer", "Var");
+
+            if (initializer != null) {
+                fragment.setInitializer(ast.newNumberLiteral(getNumberLiteral(initializer)));
+            }
+
+
+            VariableDeclarationStatement variableDeclaration = ast.newVariableDeclarationStatement(fragment);
+            variableDeclaration.setType(getType(type));
+
+            return variableDeclaration;
+        } else {
+            throw new IllegalArgumentException("Invalid Variable Declaration");
+        }
+
+    }
+
+    private SimpleName createVariable(String id) {
+	    return ast.newSimpleName(id.toLowerCase());
+    }
+
+    private InfixExpression createInfixLogicalExpression(String id) {
+        String operator = getMyRelation(id, "operator", "InfixLogicalExpression");
+        String leftOperand = getMyRelation(id, "leftOperand", "InfixLogicalExpression");
+        String rightOperand = getMyRelation(id, "rightOperand", "InfixLogicalExpression");
+
+        return createInfixExpression(leftOperand, operator, rightOperand);
+    }
+
+    private InfixExpression createInfixArithmeticExpression(String id) {
+        String operator = getMyRelation(id, "operator", "InfixArithmeticExpression");
+        String leftOperand = getMyRelation(id, "leftOperand", "InfixArithmeticExpression");
+        String rightOperand = getMyRelation(id, "rightOperand", "InfixArithmeticExpression");
+
+        return createInfixExpression(leftOperand, operator, rightOperand);
+    }
+
+    private InfixExpression createInfixExpression(String leftOperand, String operator, String rightOperand) {
+        InfixExpression infixExpression = ast.newInfixExpression();
+
+        if (operator != null && leftOperand != null && rightOperand != null) {
+            infixExpression.setOperator(getInfixOperator(operator));
+
+            infixExpression.setLeftOperand(createVariable(leftOperand));
+
+            if (rightOperand.contains("InfixArithmeticExpression"))
+                infixExpression.setRightOperand(createInfixArithmeticExpression(rightOperand));
+            else if  (rightOperand.contains("Var"))
+                infixExpression.setRightOperand(createVariable(rightOperand));
+            else
+                infixExpression.setRightOperand(ast.newNumberLiteral(getNumberLiteral(rightOperand)));
+
+            return infixExpression;
+        } else {
+            throw new IllegalArgumentException("Invalid Infix Expression");
+        }
+    }
+
+    private ExpressionStatement createAssignment(String id) {
+        String leftHandSide = getMyRelation(id, "leftHandSide", "Assignment");
+        String operator = getMyRelation(id, "operator", "Assignment");
+        String rightHandSide = getMyRelation(id, "rightHandSide", "Assignment");
+
+        if (operator != null && leftHandSide != null) {
+            Assignment assignment = ast.newAssignment();
+
+            assignment.setLeftHandSide(this.createVariable(leftHandSide));
+            assignment.setOperator(this.getAssignmentOperator(operator));
+            assignment.setRightHandSide(this.createInfixArithmeticExpression(rightHandSide));
+
+            return ast.newExpressionStatement(assignment);
+        } else {
+            throw new IllegalArgumentException("Invalid Assignment");
+        }
+
+    }
+
+    private Statement createThenStatement(String id) {
+        return createBlockWithAssignment(getMyRelation(id, "assignment", "IfBlock"));
+    }
+
+    private Statement createWhileBody(String id) {
+        return createBlockWithAssignment(getMyRelation(id, "assignment", "WhileBlock"));
+    }
+
+    private Statement createBlockWithAssignment(String assignment) {
+        if (assignment != null) {
+            Block block = ast.newBlock();
+            block.statements().add(createAssignment(assignment));
+            return block;
+        } else {
+            throw new IllegalArgumentException("Invalid While Body");
+        }
+    }
+
+	private IfStatement createIfStatement(String id) {
+
+        String expression = getMyRelation(id, "expression", "IfStatement");
+        String thenStatement = getMyRelation(id, "thenStatement", "IfStatement");
+
+        if (expression != null && thenStatement != null) {
+
+            InfixExpression infixExpression = createInfixLogicalExpression(expression);
+
+            IfStatement ifStatement = ast.newIfStatement();
+            ifStatement.setExpression(infixExpression);
+
+            Statement statement = this.createThenStatement(thenStatement);
+            ifStatement.setThenStatement(statement);
+
+            return ifStatement;
+        } else {
+            throw new IllegalArgumentException("Invalid If Statement");
+        }
+    }
+
+    private WhileStatement createWhileStatement(String id) {
+
+        String expression = getMyRelation(id, "expression", "WhileStatement");
+        String body = getMyRelation(id, "body", "WhileStatement");
+
+        if (expression != null && body != null) {
+
+            InfixExpression infixExpression = createInfixLogicalExpression(expression);
+
+            WhileStatement whileStatement = ast.newWhileStatement();
+            whileStatement.setExpression(infixExpression);
+
+            Statement statement = this.createWhileBody(body);
+            whileStatement.setBody(statement);
+
+            return whileStatement;
+        } else {
+            throw new IllegalArgumentException("Invalid While Statement");
+        }
+    }
+
 	private String getNumberLiteral(String numberLiteral) {
 
 		String literal;
 
 		switch (numberLiteral) {
-			case "MinusOneInt_0":
+			case "MINUS_ONE_0":
 				literal = "-1";
 				break;
-			case "ZeroInt_0":
+			case "ZERO_0":
 				literal = "0";
 				break;
-			case "OneInt_0":
+			case "ONE_0":
 				literal = "1";
 				break;
+            case "TWO_0":
+                literal = "2";
+                break;
 			default:
-				throw new IllegalArgumentException("Invalid literal");
+				throw new IllegalArgumentException("Invalid literal " + numberLiteral);
 		}
 
 		return literal;
+	}
+
+	private Modifier getVisibility(String visibility) {
+
+		Modifier modifier;
+
+		switch (visibility) {
+			case "PRIVATE_0":
+				modifier = ast.newModifier(ModifierKeyword.PRIVATE_KEYWORD);
+				break;
+			case "PROTECTED_0":
+				modifier = ast.newModifier(ModifierKeyword.PROTECTED_KEYWORD);;
+				break;
+			case "PUBLIC_0":
+				modifier = ast.newModifier(ModifierKeyword.PUBLIC_KEYWORD);;
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid visibility " + visibility);
+		}
+
+		return modifier;
 	}
 
     private InfixExpression.Operator getInfixOperator(String op) {
@@ -416,7 +555,7 @@ public class AlloyToJavaTranslator {
 
         switch (op) {
             case "TIMES_0":
-                operator = InfixExpression.Operator.REMAINDER;
+                operator = InfixExpression.Operator.TIMES;
                 break;
             case "DIVIDE_0":
                 operator = InfixExpression.Operator.DIVIDE;
@@ -430,8 +569,47 @@ public class AlloyToJavaTranslator {
             case "MINUS_0":
                 operator = InfixExpression.Operator.MINUS;
                 break;
+            case "LESS_0":
+                operator = InfixExpression.Operator.LESS;
+                break;
+            case "GREATER_0":
+                operator = InfixExpression.Operator.GREATER;
+                break;
+            case "LESS_EQUALS_0":
+                operator = InfixExpression.Operator.LESS_EQUALS;
+                break;
+            case "GREATER_EQUALS_0":
+                operator = InfixExpression.Operator.GREATER_EQUALS;
+                break;
+            case "EQUALS_0":
+                operator = InfixExpression.Operator.EQUALS;
+                break;
+            case "NOT_EQUALS_0":
+                operator = InfixExpression.Operator.NOT_EQUALS;
+                break;
+            case "CONDITIONAL_OR_0":
+                operator = InfixExpression.Operator.CONDITIONAL_OR;
+                break;
+            case "CONDITIONAL_AND_0":
+                operator = InfixExpression.Operator.CONDITIONAL_AND;
+                break;
             default:
-                throw new IllegalArgumentException("Invalid operator");
+                throw new IllegalArgumentException("Invalid operator " + op);
+        }
+
+        return operator;
+    }
+
+    private Assignment.Operator getAssignmentOperator(String op) {
+
+        Assignment.Operator operator;
+
+        switch (op) {
+            case "ASSIGN_0":
+                operator = Assignment.Operator.ASSIGN;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid operator " + op);
         }
 
         return operator;

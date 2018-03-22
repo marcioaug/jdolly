@@ -1,5 +1,7 @@
 package jdolly;
 
+import java.util.Map;
+
 public class Scope {
 
 	private int maxPackage = 2;
@@ -10,6 +12,7 @@ public class Scope {
 	private int skipSize = 25;
 	private String output = "";
 	private int maxVariable = 0;
+	private Map<String, Integer> sigs;
 
 	public Scope() { }
 	
@@ -83,6 +86,14 @@ public class Scope {
 
 	public void setMaxVariable(final int maxVariable) {
 		this.maxVariable = maxVariable;
+	}
+
+	public Map<String, Integer> getSigs() {
+		return this.sigs;
+	}
+
+	public void setSigs(final Map<String, Integer> sigs) {
+		this.sigs = sigs;
 	}
 
 	@Override
